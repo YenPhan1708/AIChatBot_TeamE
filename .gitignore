@@ -1,0 +1,35 @@
+# Byte-compiled and cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+# Virtual environments
+venv/
+.env/
+.venv/
+env/
+# Dependency files
+Pipfile
+Pipfile.lock
+poetry.lock
+# Environment variables and credentials
+.env
+config.json
+secrets.json
+azure_config.json
+openai_api_key.txt
+# Log files
+logs/
+*.log
+debug.log
+error.log
+# Azure database backups
+*.bak
+*.db
+*.sqlite3
+azure_storage_keys.json
+# VSCode
+.vscode/
+# PyCharm
+.idea/
