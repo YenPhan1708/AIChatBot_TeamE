@@ -7,117 +7,130 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            text-align: center;
-            margin: 50px;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
         }
 
         .chat-container {
-            max-width: 500px;
-            margin: auto;
-            background: white;
-            padding: 20px;
+            width: 400px;
+            background: #fff;
             border-radius: 10px;
-            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            margin: 0;
         }
 
         .chat-box {
-            width: 100%;
-            height: 350px;
+            height: 400px;
             overflow-y: auto;
-            padding: 10px;
-            border-radius: 10px;
-            background: #ffffff;
-            border: 1px solid #ddd;
-            text-align: left;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #fafafa;
         }
 
-        /* chat bubbles */
         .message {
-            display: block;
-            padding: 10px;
-            border-radius: 8px;
-            margin: 5px 0;
             max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 20px;
             word-wrap: break-word;
+            font-size: 14px;
         }
 
         .user-message {
+            align-self: flex-end;
             background: #007bff;
             color: white;
-            align-self: flex-end;
-            text-align: right;
-            float: right;
-            clear: both;
         }
 
         .bot-message {
-            background: #e9ecef;
-            color: black;
             align-self: flex-start;
-            text-align: left;
-            float: left;
-            clear: both;
+            background: #e0e0e0;
+            color: black;
         }
 
-        /* input and button */
         .input-container {
             display: flex;
-            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-top: 1px solid #ddd;
         }
 
-        input {
+        .input-container input {
             flex: 1;
             padding: 10px;
             border: 1px solid #ddd;
-            border-radius: 5px;
+            border-radius: 20px;
+            outline: none;
         }
 
-        button {
-            padding: 10px 15px;
-            border: none;
+        .input-container button {
             background: #007bff;
             color: white;
-            border-radius: 5px;
-            cursor: pointer;
+            border: none;
+            padding: 10px 15px;
             margin-left: 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
         }
 
-        button:hover {
+        .input-container button:hover {
             background: #0056b3;
         }
 
-        /* loading spinner */
         .spinner {
             display: none;
-            margin: 10px auto;
-            border: 4px solid #ddd;
-            border-top: 4px solid #007bff;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            clear: both;
+            text-align: center;
+            padding: 10px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .spinner::after {
+            content: "⏳ Typing...";
+            font-size: 14px;
+            color: gray;
+        }
+
+        .session-info {
+            text-align: center;
+            font-size: 12px;
+            padding: 5px;
+            background: #f1f1f1;
+            color: #333;
         }
     </style>
 </head>
 <body>
-<h1>Bravur AI Chatbot</h1>
+
 <div class="chat-container">
+    <h1>Bravur AI Chatbot</h1>
     <div id="chat-box" class="chat-box"></div>
-    <div class="spinner" id="spinner"></div> <!-- loading animation -->
+    <div class="spinner" id="spinner"></div> <!-- Loading animation -->
     <div class="input-container">
         <input type="text" id="user-input" placeholder="Type your question...">
         <button onclick="sendMessage()">Send</button>
     </div>
+    <div class="session-info">Session ID: <span id="session-id">{{ session_id|default('No session created yet') }}</span></div>
 </div>
 
 <script>
+    let currentSessionId = "{{ session_id|default('None') }}";
+    console.log("Initial session ID:", currentSessionId);
+
     function sendMessage() {
         let userInputField = document.getElementById("user-input");
         let userInput = userInputField.value.trim();
@@ -126,21 +139,33 @@
         let chatBox = document.getElementById("chat-box");
         let spinner = document.getElementById("spinner");
 
-        // add user's message
         chatBox.innerHTML += `<p class="message user-message">${userInput}</p>`;
-        userInputField.value = ""; // clear input field
-        spinner.style.display = "block"; // show loading animation
+        userInputField.value = "";
+        spinner.style.display = "block";
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        const formData = new URLSearchParams({
+            "user_input": userInput,
+            "session_id": currentSessionId
+        });
 
         fetch("/chat", {
             method: "POST",
-            body: new URLSearchParams({ "user_input": userInput }),
+            body: formData,
             headers: { "Content-Type": "application/x-www-form-urlencoded" }
         })
             .then(response => response.json())
             .then(data => {
-                spinner.style.display = "none"; // hide loading animation
+                spinner.style.display = "none";
                 chatBox.innerHTML += `<p class="message bot-message">${data.response}</p>`;
                 chatBox.scrollTop = chatBox.scrollHeight;
+
+                if (data.session_id) {
+                    currentSessionId = data.session_id;
+                    console.log("Updated session ID:", currentSessionId);
+                    document.getElementById("session-id").textContent = currentSessionId;
+                }
             })
             .catch(error => {
                 console.error("Error:", error);
@@ -149,13 +174,18 @@
             });
     }
 
-    // enter key to send messages
     document.getElementById("user-input").addEventListener("keydown", function(event) {
         if (event.key === "Enter") {
             event.preventDefault();
             sendMessage();
         }
     });
+
+    window.onload = function() {
+        document.getElementById("chat-box").innerHTML =
+            '<p class="message bot-message">Welcome to Bravur AI Chatbot! How can I help you today?</p>';
+    };
 </script>
+
 </body>
 </html>
