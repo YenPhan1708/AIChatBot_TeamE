@@ -140,6 +140,3 @@ def get_session_messages(session_id):
         if conn:
             conn.close()
         return []
-
-
-
